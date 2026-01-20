@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ordersAPI, cartAPI } from '../api';
+import { ordersAPI } from '../api';
 import { useAuthStore, useCartStore } from '../store';
 import toast from 'react-hot-toast';
 import { loadStripe } from '@stripe/stripe-js';
@@ -14,7 +14,7 @@ const stripePromise = loadStripe(
 );
 
 function CheckoutPage() {
-  const navigate = useNavigate();
+
   const { user } = useAuthStore();
   const { cart, clearCart } = useCartStore();
 

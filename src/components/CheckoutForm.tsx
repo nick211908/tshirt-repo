@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import toast from 'react-hot-toast';
-import { motion } from 'motion/react';
+
 
 interface CheckoutFormProps {
     amount: number;

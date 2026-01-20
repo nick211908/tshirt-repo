@@ -40,8 +40,27 @@ function ProductDetailsPage() {
   const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        if (!slug) return;
+        const response = await productsAPI.getBySlug(slug);
+        setProduct(response.data);
+        // Set default selections
+        if (response.data.variants.length > 0) {
+          setSelectedSize(response.data.variants[0].size);
+          setSelectedColor(response.data.variants[0].color);
+        }
+      } catch (error) {
+        toast.error('Failed to load product');
+        navigate('/');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProduct();
-  }, [slug]);
+  }, [slug, navigate]);
 
   // Handle Size Change: Auto-select available color
   useEffect(() => {
@@ -55,25 +74,6 @@ function ProductDetailsPage() {
       }
     }
   }, [selectedSize, product, selectedColor]);
-
-  const fetchProduct = async () => {
-    try {
-      setLoading(true);
-      if (!slug) return;
-      const response = await productsAPI.getBySlug(slug);
-      setProduct(response.data);
-      // Set default selections
-      if (response.data.variants.length > 0) {
-        setSelectedSize(response.data.variants[0].size);
-        setSelectedColor(response.data.variants[0].color);
-      }
-    } catch (error) {
-      toast.error('Failed to load product');
-      navigate('/');
-    } finally {
-      setLoading(false);
-    }
-  };
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const getSelectedVariant = () => {

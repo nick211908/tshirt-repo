@@ -11,19 +11,19 @@ function CartPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const response = await cartAPI.get();
+        setCart(response.data);
+      } catch (error) {
+        console.error('Failed to fetch cart');
+      }
+    };
+
     if (token) {
       fetchCart();
     }
-  }, [token]);
-
-  const fetchCart = async () => {
-    try {
-      const response = await cartAPI.get();
-      setCart(response.data);
-    } catch (error) {
-      console.error('Failed to fetch cart');
-    }
-  };
+  }, [token, setCart]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const handleRemoveItem = async (productId: string, variantSku: string) => {

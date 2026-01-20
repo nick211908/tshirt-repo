@@ -70,7 +70,7 @@ function AdminPage() {
         images: [] as string[],
         is_published: true
     });
-    const [variantsJson, setVariantsJson] = useState('[]');
+
 
     const handleEdit = (product: Product) => {
         setEditingProduct(product);
