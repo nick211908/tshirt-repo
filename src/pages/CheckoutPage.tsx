@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { motion } from 'motion/react';
 import { ordersAPI } from '../api';
 import { useAuthStore, useCartStore } from '../store';
