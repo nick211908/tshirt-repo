@@ -13,7 +13,7 @@ function Footer() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-zinc-950">
                 <span className="text-lg font-bold">T</span>
               </div>
-              <h3 className="text-xl font-bold tracking-tight text-white">TeeStore</h3>
+              <h3 className="text-xl font-bold tracking-tight text-white">BeAware</h3>
             </div>
             <p className="text-sm text-zinc-400">
               Premium quality t-shirts ensuring comfort and style for every occasion.
@@ -93,7 +93,7 @@ function Footer() {
         </div>
 
         <div className="mt-16 border-t border-white/5 pt-8 text-center text-sm text-zinc-500">
-          <p>&copy; {new Date().getFullYear()} TeeStore. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} BeAware. All rights reserved.</p>
         </div>
       </div>
     </footer>

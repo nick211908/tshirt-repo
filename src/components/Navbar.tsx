@@ -32,7 +32,7 @@ function Navbar() {
               <span className="text-lg font-bold">T</span>
             </div>
             <span className="text-xl font-bold tracking-tight text-white">
-              TeeStore
+              BeAware
             </span>
           </Link>
 
