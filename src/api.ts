@@ -140,7 +140,7 @@ export const productsAPI = {
   },
   uploadImage: async (file: File) => {
     const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('products') // Ensure bucket 'products' exists and is public
       .upload(fileName, file);
 

@@ -50,7 +50,7 @@ function CheckoutPage() {
         currency: 'USD'
       };
 
-      const order = await ordersAPI.create(orderData);
+      await ordersAPI.create(orderData);
 
       toast.success('Order placed successfully!');
       clearCart();

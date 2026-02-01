@@ -31,7 +31,7 @@ function AuthPage() {
     e.preventDefault();
     try {
       setLoading(true);
-      const { session, user } = await authAPI.login(formData.email, formData.password);
+      const { session } = await authAPI.login(formData.email, formData.password);
 
       const access_token = session?.access_token;
       if (access_token) {
