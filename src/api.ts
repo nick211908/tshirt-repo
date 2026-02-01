@@ -141,7 +141,7 @@ export const productsAPI = {
   uploadImage: async (file: File) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = fileName; // simple path at root
+
     const { error } = await supabase.storage
       .from('products') // Ensure bucket 'products' exists and is public
       .upload(fileName, file);
