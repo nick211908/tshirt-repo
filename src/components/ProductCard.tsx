@@ -2,16 +2,16 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore, useAuthStore } from '../store';
-import { cartAPI, API_BASE_URL } from '../api';
+import { cartAPI } from '../api';
 import toast from 'react-hot-toast';
 
 interface Product {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   base_price: number;
   slug: string;
-  variants: Array<{
+  product_variants: Array<{
     color: string;
     size: string;
     stock_quantity: number;
@@ -32,7 +32,8 @@ function ProductCard({ product, index }: ProductCardProps) {
   const navigate = useNavigate();
   const { setCart } = useCartStore();
   const { token } = useAuthStore();
-  const isOutOfStock = !product.variants || product.variants.length === 0 || product.variants.every(v => v.stock_quantity === 0);
+
+  const isOutOfStock = !product.product_variants || product.product_variants.length === 0 || product.product_variants.every(v => v.stock_quantity === 0);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -44,16 +45,15 @@ function ProductCard({ product, index }: ProductCardProps) {
       return;
     }
 
-    const availableVariant = product.variants.find(v => v.stock_quantity > 0) || product.variants[0];
-
+    const availableVariant = product.product_variants.find(v => v.stock_quantity > 0) || product.product_variants[0];
     if (!availableVariant) {
       toast.error('Product is out of stock');
       return;
     }
 
     try {
-      const response = await cartAPI.addItem(product._id, availableVariant.sku, 1);
-      setCart(response.data);
+      const response = await cartAPI.addItem(product.id, availableVariant.sku, 1);
+      setCart(response);
       toast.success(`${product.title} added to cart!`);
     } catch (error) {
       toast.error('Failed to add item to cart');
@@ -74,7 +74,7 @@ function ProductCard({ product, index }: ProductCardProps) {
 
           {product.images && product.images.length > 0 ? (
             <img
-              src={`${API_BASE_URL}${product.images[0]}`}
+              src={product.images[0]}
               alt={product.title}
               className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${isOutOfStock ? 'opacity-60 grayscale' : ''}`}
             />

@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
-
 import { motion } from 'motion/react';
 import { ordersAPI } from '../api';
 import { useAuthStore, useCartStore } from '../store';
 import toast from 'react-hot-toast';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements } from '@stripe/react-stripe-js';
-import CheckoutForm from '../components/CheckoutForm';
-
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
-  'pk_test_TYooMQauvdEDq54NiTphI7jx'
-);
+import { useNavigate } from 'react-router-dom';
 
 function CheckoutPage() {
-
   const { user } = useAuthStore();
   const { cart, clearCart } = useCartStore();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  const [clientSecret, setClientSecret] = useState('');
   const [shippingAddress, setShippingAddress] = useState({
     full_name: user?.full_name || '',
     address_line_1: '',
@@ -50,25 +41,23 @@ function CheckoutPage() {
 
     try {
       setLoading(true);
-      console.log('Creating order with address:', shippingAddress);
-      const response = await ordersAPI.create({
+      const items = cart?.items || [];
+      const orderData = {
         shipping_address: shippingAddress,
-      });
-      console.log('Order created response:', response);
+        items: items,
+        total_amount: cart?.total_price || 0,
+        status: 'PENDING',
+        currency: 'USD'
+      };
 
-      if (!response.data.client_secret) {
-        console.error('No client_secret in response:', response.data);
-        toast.error('Payment initialization failed');
-        return;
-      }
+      const order = await ordersAPI.create(orderData);
 
-      setClientSecret(response.data.client_secret);
-      setStep(3);
-      toast.success('Order created. Proceed to payment.');
+      toast.success('Order placed successfully!');
       clearCart();
+      navigate('/orders'); // Redirect to orders page
     } catch (error: any) {
       console.error('Order creation failed:', error);
-      toast.error(error.response?.data?.detail || 'Failed to place order');
+      toast.error(error.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
@@ -99,7 +88,7 @@ function CheckoutPage() {
             >
               {/* Steps */}
               <div className="mb-12 flex items-center justify-between">
-                {[1, 2, 3].map((s) => (
+                {[1, 2].map((s) => (
                   <div key={s} className="flex items-center gap-3">
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ${step >= s
@@ -112,9 +101,7 @@ function CheckoutPage() {
                     <span className="hidden text-sm font-medium sm:block">
                       {s === 1
                         ? 'Shipping'
-                        : s === 2
-                          ? 'Review'
-                          : 'Payment'}
+                        : 'Review & Pay'}
                     </span>
                   </div>
                 ))}
@@ -223,22 +210,9 @@ function CheckoutPage() {
                       disabled={loading}
                       className="flex-1 rounded-md bg-zinc-900 py-3 text-sm font-semibold text-white disabled:opacity-50"
                     >
-                      {loading ? 'Processing…' : 'Proceed to Payment'}
+                      {loading ? 'Processing…' : 'Place Order'}
                     </button>
                   </div>
-                </div>
-              )}
-
-              {/* Step 3 */}
-              {step === 3 && clientSecret && (
-                <div className="space-y-6">
-                  <h2 className="text-xl font-semibold">Payment</h2>
-                  <Elements
-                    stripe={stripePromise}
-                    options={{ clientSecret }}
-                  >
-                    <CheckoutForm amount={total} />
-                  </Elements>
                 </div>
               )}
             </motion.div>

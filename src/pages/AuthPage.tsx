@@ -31,25 +31,20 @@ function AuthPage() {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await authAPI.login(formData.email, formData.password);
-      const { access_token } = response.data;
+      const { session, user } = await authAPI.login(formData.email, formData.password);
 
-      setToken(access_token);
-      setToken(access_token);
-
-      // Fetch user info using the token (which is already set in api interceptor via store, 
-      // but we need to update the store immediately for the next call to work or just rely on the stored token)
-      // Since zustand update might not be instant for the interceptor callback if we just called setToken,
-      // let's manually adding header for this one request or wait a tick. 
-      // Actually, axios interceptor reads from localStorage or store. setToken updates both.
+      const access_token = session?.access_token;
+      if (access_token) {
+        setToken(access_token);
+      }
 
       const userResponse = await authAPI.me();
-      setUser(userResponse.data);
+      setUser(userResponse); // userResponse is the user object directly now
 
       toast.success('Login successful!');
       navigate(redirect);
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Login failed');
+      toast.error(error.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -59,17 +54,23 @@ function AuthPage() {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await authAPI.register(formData);
+      const { user, session } = await authAPI.register(formData);
 
-      toast.success('Registration successful! Logging you in...');
-      // Auto-login after registration
-      const loginResponse = await authAPI.login(formData.email, formData.password);
-      setToken(loginResponse.data.access_token);
-      setUser(response.data);
-
-      navigate(redirect);
+      if (user && !session) {
+        toast.success('Registration successful! Please check your email to confirm your account.');
+        setIsLogin(true);
+      } else {
+        toast.success('Registration successful!');
+        // Auto-login
+        if (session) {
+          setToken(session.access_token);
+          const userResponse = await authAPI.me();
+          setUser(userResponse);
+          navigate(redirect);
+        }
+      }
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Registration failed');
+      toast.error(error.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

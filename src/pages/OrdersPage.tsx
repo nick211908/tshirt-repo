@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { ordersAPI, API_BASE_URL } from '../api';
+import { ordersAPI } from '../api';
 import toast from 'react-hot-toast';
 
 interface OrderItem {
@@ -17,10 +17,10 @@ interface OrderItem {
 
 
 interface Order {
-  _id: string;
+  id: string; // Supabase uses id
   user_id: string;
   status: string;
-  items: OrderItem[];
+  order_items: OrderItem[]; // Supabase join
   total_amount: number;
   currency: string;
   shipping_address: {
@@ -45,8 +45,9 @@ function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await ordersAPI.getAll();
-      setOrders(response.data);
+      setLoading(true);
+      const ordersData = await ordersAPI.getAll();
+      setOrders(ordersData);
     } catch (error) {
       toast.error('Failed to load orders');
       console.error(error);
@@ -112,7 +113,7 @@ function OrdersPage() {
 
         <div className="space-y-6">
           {orders.map((order, index) => (
-            <OrderCard key={order._id} order={order} index={index} />
+            <OrderCard key={order.id} order={order} index={index} />
           ))}
         </div>
       </div>
@@ -149,7 +150,7 @@ function OrderCard({ order, index }: OrderCardProps) {
       >
         <div>
           <p className="text-sm font-medium">
-            Order #{order._id.slice(0, 8).toUpperCase()}
+            Order #{order.id.slice(0, 8).toUpperCase()}
           </p>
           <p className="mt-1 text-xs text-zinc-500">
             {new Date(order.created_at).toLocaleDateString()}
@@ -169,7 +170,7 @@ function OrderCard({ order, index }: OrderCardProps) {
               ${Number(order.total_amount).toFixed(2)}
             </p>
             <p className="text-xs text-zinc-500">
-              {order.items.length} items
+              {order.order_items.length} items
             </p>
           </div>
 
@@ -204,7 +205,7 @@ function OrderCard({ order, index }: OrderCardProps) {
           <div>
             <h4 className="mb-3 font-medium">Items</h4>
             <div className="space-y-3">
-              {order.items.map((item) => (
+              {order.order_items.map((item) => (
                 <div
                   key={item.variant_sku}
                   className="flex items-center gap-4 justify-between"
@@ -213,7 +214,7 @@ function OrderCard({ order, index }: OrderCardProps) {
                     <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 flex items-center justify-center">
                       {item.image ? (
                         <img
-                          src={`${API_BASE_URL}${item.image}`}
+                          src={item.image}
                           alt={item.title}
                           className="h-full w-full object-cover"
                         />

@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { productsAPI, API_BASE_URL } from '../api';
+import { productsAPI } from '../api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store';
 import { useNavigate } from 'react-router-dom';
 
 interface Product {
-    _id: string;
+    id: string; // Supabase uses 'id'
     title: string;
     description: string;
     base_price: number;
     slug: string;
     is_published: boolean;
-    variants: any[];
+    product_variants: any[]; // Supabase join returns this
     images: string[];
 }
 
@@ -39,7 +39,7 @@ function AdminPage() {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const response = await productsAPI.getAll(0, 100); // Fetch all for now
+            const response = await productsAPI.getAll(0, 100);
             setProducts(response.data);
         } catch (error) {
             toast.error('Failed to load products');
@@ -80,7 +80,7 @@ function AdminPage() {
             description: product.description,
             base_price: product.base_price,
             slug: product.slug,
-            variants: product.variants || [],
+            variants: product.product_variants || [], // Map from Supabase key
             images: product.images || [],
             is_published: product.is_published
         });
@@ -90,11 +90,11 @@ function AdminPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // Variants are already in formData object
-            const dataToSubmit = { ...formData };
+            const { variants, ...rest } = formData;
+            const dataToSubmit = { ...rest, product_variants: variants }; // Map to API expected key
 
             if (editingProduct) {
-                await productsAPI.update(editingProduct._id, dataToSubmit);
+                await productsAPI.update(editingProduct.id, dataToSubmit);
                 toast.success('Product updated');
             } else {
                 await productsAPI.create(dataToSubmit);
@@ -114,7 +114,7 @@ function AdminPage() {
             });
             fetchProducts();
         } catch (error: any) {
-            toast.error(error.response?.data?.detail || 'Operation failed');
+            toast.error(error.message || 'Operation failed');
         }
     };
 
@@ -159,7 +159,7 @@ function AdminPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {products.map((product) => (
-                                    <tr key={product._id} className="hover:bg-gray-50 transition">
+                                    <tr key={product.id} className="hover:bg-gray-50 transition">
                                         <td className="px-6 py-4 font-medium text-gray-900">{product.title}</td>
                                         <td className="px-6 py-4 text-gray-900">${Number(product.base_price).toFixed(2)}</td>
                                         <td className="px-6 py-4">
@@ -180,7 +180,7 @@ function AdminPage() {
                                                 Edit
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(product._id)}
+                                                onClick={() => handleDelete(product.id)}
                                                 className="text-red-600 hover:text-red-900 font-medium"
                                             >
                                                 Delete
@@ -303,7 +303,7 @@ function AdminPage() {
                                                 {formData.images.map((img, index) => (
                                                     <div key={index} className="relative group w-24 h-24 border rounded-lg overflow-hidden">
                                                         <img
-                                                            src={`${API_BASE_URL}${img}`}
+                                                            src={img}
                                                             alt={`Product ${index}`}
                                                             className="w-full h-full object-cover"
                                                         />
@@ -339,7 +339,7 @@ function AdminPage() {
                                                                     const res = await productsAPI.uploadImage(file);
                                                                     setFormData(prev => ({
                                                                         ...prev,
-                                                                        images: [...prev.images, res.data.url]
+                                                                        images: [...prev.images, res.url]
                                                                     }));
                                                                     toast.dismiss(loader);
                                                                     toast.success('Image uploaded');

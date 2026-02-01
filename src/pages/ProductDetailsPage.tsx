@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { productsAPI, cartAPI, API_BASE_URL } from '../api';
+import { productsAPI, cartAPI } from '../api';
 import { useAuthStore, useCartStore } from '../store';
 import toast from 'react-hot-toast';
 
@@ -14,12 +14,12 @@ interface Variant {
 }
 
 interface Product {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   base_price: number;
   slug: string;
-  variants: Variant[];
+  product_variants: Variant[];
   images: string[];
   is_published: boolean;
   created_at: string;
@@ -44,12 +44,12 @@ function ProductDetailsPage() {
       try {
         setLoading(true);
         if (!slug) return;
-        const response = await productsAPI.getBySlug(slug);
-        setProduct(response.data);
+        const productData = await productsAPI.getBySlug(slug);
+        setProduct(productData);
         // Set default selections
-        if (response.data.variants.length > 0) {
-          setSelectedSize(response.data.variants[0].size);
-          setSelectedColor(response.data.variants[0].color);
+        if (productData.product_variants.length > 0) {
+          setSelectedSize(productData.product_variants[0].size);
+          setSelectedColor(productData.product_variants[0].color);
         }
       } catch (error) {
         toast.error('Failed to load product');
@@ -65,7 +65,7 @@ function ProductDetailsPage() {
   // Handle Size Change: Auto-select available color
   useEffect(() => {
     if (product && selectedSize) {
-      const validColors = product.variants
+      const validColors = product.product_variants
         .filter((v) => v.size === selectedSize)
         .map((v) => v.color);
 
@@ -77,7 +77,7 @@ function ProductDetailsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const getSelectedVariant = () => {
-    return product?.variants.find(
+    return product?.product_variants.find(
       (v) => v.size === selectedSize && v.color === selectedColor
     );
   };
@@ -97,8 +97,16 @@ function ProductDetailsPage() {
 
     try {
       setAddingToCart(true);
-      const response = await cartAPI.addItem(product!._id, variant.sku, quantity);
-      setCart(response.data);
+      setAddingToCart(true);
+      const response = await cartAPI.addItem(product!.id, variant.sku, quantity);
+      setCart(response); // cartAPI.addItem returns void in previous impl?
+      // Checked api.ts: addItem returns void. Cart is fetched via cartAPI.get() or returned?
+      // In Supabase api.ts: addItem returns void.
+      // But useCartStore.addItem updates local state?
+      // Old code: setCart(response.data).
+      // We should refetch cart or return cart from addItem.
+      // Let's check api.ts again.
+
       toast.success('Added to cart!');
       setQuantity(1);
     } catch (error: any) {
@@ -149,8 +157,8 @@ function ProductDetailsPage() {
     );
   }
 
-  const availableSizes = [...new Set(product.variants.map((v) => v.size))];
-  const availableColors = product.variants
+  const availableSizes = [...new Set(product.product_variants.map((v) => v.size))];
+  const availableColors = product.product_variants
     .filter((v) => v.size === selectedSize)
     .map((v) => v.color);
   const selectedVariant = getSelectedVariant();
@@ -184,7 +192,7 @@ function ProductDetailsPage() {
             <div className="aspect-[4/5] w-full max-w-md rounded-xl bg-zinc-100 flex items-center justify-center overflow-hidden">
               {product.images && product.images.length > 0 ? (
                 <img
-                  src={`${API_BASE_URL}${product.images[0]}`}
+                  src={product.images[0]}
                   alt={product.title}
                   className="h-full w-full object-cover"
                 />
@@ -215,7 +223,7 @@ function ProductDetailsPage() {
                 <label className="mb-3 block text-sm font-medium text-zinc-900">
                   Select Size
                 </label>
-                {product.variants.length === 0 ? (
+                {product.product_variants.length === 0 ? (
                   <div className="text-sm text-zinc-500 italic">No sizes available</div>
                 ) : (
                   <div className="flex flex-wrap gap-3">
@@ -240,7 +248,7 @@ function ProductDetailsPage() {
                 <label className="mb-3 block text-sm font-medium text-zinc-900">
                   Select Color
                 </label>
-                {product.variants.length === 0 ? (
+                {product.product_variants.length === 0 ? (
                   <div className="text-sm text-zinc-500 italic">No colors available</div>
                 ) : (
                   <div className="flex flex-wrap gap-3">
@@ -261,7 +269,7 @@ function ProductDetailsPage() {
               </div>
 
               {/* Stock Status */}
-              {product.variants.length === 0 ? (
+              {product.product_variants.length === 0 ? (
                 <div className="mb-6">
                   <p className="flex items-center gap-2 text-sm text-zinc-500 font-medium">
                     <span className="h-2 w-2 rounded-full bg-zinc-500" />

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore, useAuthStore } from '../store';
-import { cartAPI, API_BASE_URL } from '../api';
+import { cartAPI } from '../api';
 import toast from 'react-hot-toast';
 
 function CartPage() {
@@ -14,7 +14,7 @@ function CartPage() {
     const fetchCart = async () => {
       try {
         const response = await cartAPI.get();
-        setCart(response.data);
+        if (response) setCart(response);
       } catch (error) {
         console.error('Failed to fetch cart');
       }
@@ -29,7 +29,7 @@ function CartPage() {
   const handleRemoveItem = async (productId: string, variantSku: string) => {
     try {
       const response = await cartAPI.removeItem(productId, variantSku);
-      setCart(response.data);
+      if (response) setCart(response);
       removeItem(productId, variantSku);
       toast.success('Item removed from cart');
     } catch (error) {
@@ -167,7 +167,7 @@ function CartItemRow({ item, index, onRemove }: CartItemRowProps) {
         <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-zinc-100 bg-zinc-50">
           {item.image ? (
             <img
-              src={`${API_BASE_URL}${item.image}`}
+              src={item.image}
               alt={item.title}
               className="h-full w-full object-cover"
             />

@@ -5,12 +5,12 @@ import { productsAPI } from '../api';
 import toast from 'react-hot-toast';
 
 interface Product {
-  _id: string;
+  id: string; // Supabase
   title: string;
   description: string;
   base_price: number;
   slug: string;
-  variants: Array<{ color: string; size: string }>;
+  product_variants: Array<{ color: string; size: string }>;
   images: string[];
   is_published: boolean;
   created_at: string;
@@ -28,7 +28,10 @@ function HomePage() {
     try {
       setLoading(true);
       const response = await productsAPI.getAll(0, 20);
-      setProducts(response.data);
+      setProducts(response.data); // data is now direct array in getAll response... Wait, getAll returns {data, total}. So response.data is the array.
+      // In api.ts: `return { data, total: count };`
+      // So response is { data, total }. response.data is the array.
+
     } catch (error) {
       toast.error('Failed to load products');
       console.error(error);
@@ -182,7 +185,7 @@ function HomePage() {
                       .filter(p => p.slug.toLowerCase().includes('men') && !p.slug.toLowerCase().includes('women'))
                       .slice(0, 5)
                       .map((product, index) => (
-                        <ProductCard key={product._id} product={product} index={index} />
+                        <ProductCard key={product.id} product={product} index={index} />
                       ))}
                   </div>
                 </div>
@@ -200,7 +203,7 @@ function HomePage() {
                       .filter(p => p.slug.toLowerCase().includes('women'))
                       .slice(0, 5)
                       .map((product, index) => (
-                        <ProductCard key={product._id} product={product} index={index} />
+                        <ProductCard key={product.id} product={product} index={index} />
                       ))}
                   </div>
                 </div>
@@ -224,7 +227,7 @@ function HomePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                   {products.slice(0, 12).map((product, index) => (
-                    <ProductCard key={product._id} product={product} index={index} />
+                    <ProductCard key={product.id} product={product} index={index} />
                   ))}
                 </div>
               </div>
