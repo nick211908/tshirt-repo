@@ -53,7 +53,7 @@ function CheckoutPage() {
           items: items,
           total_amount: totalAmount,
           status: 'PAID', // Immediately mark as paid for this flow
-          currency: 'USD',
+          currency: 'INR',
           payment_id: response.razorpay_payment_id
         };
 

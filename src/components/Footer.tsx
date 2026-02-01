@@ -11,7 +11,8 @@ function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-zinc-950">
-                <span className="text-lg font-bold">T</span>
+                <span className="text-lg font-bold">
+            <img src="/images/logo.jpeg" alt="BeAware Logo" className="h-8 w-8 rounded-lg object-cover" /></span>
               </div>
               <h3 className="text-xl font-bold tracking-tight text-white">BeAware</h3>
             </div>
