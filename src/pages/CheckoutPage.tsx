@@ -4,6 +4,7 @@ import { ordersAPI } from '../api';
 import { useAuthStore, useCartStore } from '../store';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { openRazorpay } from '../utils/razorpay';
 
 function CheckoutPage() {
   const { user } = useAuthStore();
@@ -39,28 +40,54 @@ function CheckoutPage() {
       return;
     }
 
-    try {
-      setLoading(true);
-      const items = cart?.items || [];
-      const orderData = {
-        shipping_address: shippingAddress,
-        items: items,
-        total_amount: cart?.total_price || 0,
-        status: 'PENDING',
-        currency: 'USD'
-      };
+    const subtotal = cart?.total_price || 0;
+    const tax = subtotal * 0.1;
+    const totalAmount = subtotal + tax;
 
-      await ordersAPI.create(orderData);
+    const handleSuccess = async (response: any) => {
+      try {
+        setLoading(true);
+        const items = cart?.items || [];
+        const orderData = {
+          shipping_address: shippingAddress,
+          items: items,
+          total_amount: totalAmount,
+          status: 'PAID', // Immediately mark as paid for this flow
+          currency: 'USD',
+          payment_id: response.razorpay_payment_id
+        };
 
-      toast.success('Order placed successfully!');
-      clearCart();
-      navigate('/orders'); // Redirect to orders page
-    } catch (error: any) {
-      console.error('Order creation failed:', error);
-      toast.error(error.message || 'Failed to place order');
-    } finally {
-      setLoading(false);
-    }
+        await ordersAPI.create(orderData);
+
+        toast.success('Payment successful! Order placed.');
+        clearCart();
+        navigate('/orders');
+      } catch (error: any) {
+        console.error('Order creation failed:', error);
+        toast.error(error.message || 'Failed to place order after payment');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const options = {
+      key: process.env.REACT_APP_RAZORPAY_PUBLISHABLE_KEY || 'rzp_test_S7Kt7tgndHVHBj', // Fallback for safety
+      amount: Math.round(totalAmount * 100), // Amount in paise
+      currency: 'USD',
+      name: 'BeAware',
+      description: 'Payment for your order',
+      image: '/images/logo.jpeg',
+      handler: handleSuccess,
+      prefill: {
+        name: shippingAddress.full_name,
+        email: user?.email,
+      },
+      theme: {
+        color: '#18181b', // zinc-950
+      },
+    };
+
+    openRazorpay(options);
   };
 
   const subtotal = cart?.total_price || 0;
@@ -210,7 +237,7 @@ function CheckoutPage() {
                       disabled={loading}
                       className="flex-1 rounded-md bg-zinc-900 py-3 text-sm font-semibold text-white disabled:opacity-50"
                     >
-                      {loading ? 'Processing…' : 'Place Order'}
+                      {loading ? 'Processing…' : 'Pay with Razorpay'}
                     </button>
                   </div>
                 </div>
