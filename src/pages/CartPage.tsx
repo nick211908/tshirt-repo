@@ -108,7 +108,7 @@ function CartPage() {
             <div className="mb-6 space-y-3 border-b border-zinc-100 pb-6 text-sm text-zinc-600">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>₹{totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -116,14 +116,14 @@ function CartPage() {
               </div>
               <div className="flex justify-between">
                 <span>Tax (10%)</span>
-                <span>${(totalPrice * 0.1).toFixed(2)}</span>
+                <span>₹{(totalPrice * 0.1).toFixed(2)}</span>
               </div>
             </div>
 
             <div className="mb-8 flex items-center justify-between">
               <span className="text-base font-medium">Total</span>
               <span className="text-2xl font-semibold">
-                ${(totalPrice * 1.1).toFixed(2)}
+                ₹{(totalPrice * 1.1).toFixed(2)}
               </span>
             </div>
 
@@ -183,14 +183,14 @@ function CartItemRow({ item, index, onRemove }: CartItemRowProps) {
           <h4 className="font-medium text-zinc-900">{item.title}</h4>
           <p className="text-sm text-zinc-500">SKU: {item.variant_sku}</p>
           <div className="mt-1 flex items-center gap-4 text-sm text-zinc-500">
-            <span>${item.price.toFixed(2)} x {item.quantity}</span>
+            <span>₹{item.price.toFixed(2)} x {item.quantity}</span>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-6">
         <span className="font-medium text-zinc-900">
-          ${(item.price * item.quantity).toFixed(2)}
+          ₹{(item.price * item.quantity).toFixed(2)}
         </span>
         <button
           onClick={onRemove}

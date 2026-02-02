@@ -5,6 +5,7 @@ interface RazorpayOptions {
     currency: string;
     name: string;
     description: string;
+    order_id?: string;
     image?: string;
     handler: (response: any) => void;
     prefill?: {
@@ -15,6 +16,9 @@ interface RazorpayOptions {
     notes?: any;
     theme?: {
         color: string;
+    };
+    modal?: {
+        ondismiss?: () => void;
     };
 }
 

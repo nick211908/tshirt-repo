@@ -109,7 +109,7 @@ function ProductCard({ product, index }: ProductCardProps) {
           <div className="mt-4 flex items-center justify-between">
             <div className="flex flex-col">
               <span className={`text-base font-semibold ${isOutOfStock ? 'text-zinc-500' : 'text-zinc-100'}`}>
-                ${Number(product.base_price).toFixed(2)}
+                ₹{Number(product.base_price).toFixed(2)}
               </span>
             </div>
 

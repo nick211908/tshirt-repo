@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ordersAPI } from '../api';
 import { useAuthStore, useCartStore } from '../store';
+import { ordersAPI } from '../api';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { openRazorpay } from '../utils/razorpay';
+import { loadRazorpay, openRazorpay } from '../utils/razorpay';
+import MapPicker from '../components/MapPicker';
 
 function CheckoutPage() {
   const { user } = useAuthStore();
@@ -13,6 +14,8 @@ function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [addressFromMap, setAddressFromMap] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     full_name: user?.full_name || '',
     address_line_1: '',
@@ -20,7 +23,9 @@ function CheckoutPage() {
     city: '',
     state: '',
     zip_code: '',
-    country: 'USA',
+    country: 'India',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
 
   const handleAddressChange = (
@@ -40,54 +45,80 @@ function CheckoutPage() {
       return;
     }
 
-    const subtotal = cart?.total_price || 0;
-    const tax = subtotal * 0.1;
-    const totalAmount = subtotal + tax;
+    if (!cart || cart.items.length === 0) {
+      toast.error('Your cart is empty');
+      return;
+    }
 
-    const handleSuccess = async (response: any) => {
-      try {
-        setLoading(true);
-        const items = cart?.items || [];
-        const orderData = {
-          shipping_address: shippingAddress,
-          items: items,
-          total_amount: totalAmount,
-          status: 'PAID', // Immediately mark as paid for this flow
-          currency: 'INR',
-          payment_id: response.razorpay_payment_id
-        };
+    setLoading(true);
 
-        await ordersAPI.create(orderData);
-
-        toast.success('Payment successful! Order placed.');
-        clearCart();
-        navigate('/orders');
-      } catch (error: any) {
-        console.error('Order creation failed:', error);
-        toast.error(error.message || 'Failed to place order after payment');
-      } finally {
+    try {
+      const loaded = await loadRazorpay();
+      if (!loaded) {
+        toast.error('Failed to load payment gateway');
         setLoading(false);
+        return;
       }
-    };
 
-    const options = {
-      key: process.env.REACT_APP_RAZORPAY_PUBLISHABLE_KEY || 'rzp_test_S7Kt7tgndHVHBj', // Fallback for safety
-      amount: Math.round(totalAmount * 100), // Amount in paise
-      currency: 'USD',
-      name: 'BeAware',
-      description: 'Payment for your order',
-      image: '/images/logo.jpeg',
-      handler: handleSuccess,
-      prefill: {
-        name: shippingAddress.full_name,
-        email: user?.email,
-      },
-      theme: {
-        color: '#18181b', // zinc-950
-      },
-    };
+      // Calculate total amount in smallest currency unit (paise for INR)
+      const subtotal = cart.total_price;
+      const tax = subtotal * 0.1; // 10% tax
+      const totalAmount = subtotal + tax;
+      const amountInPaise = Math.round(totalAmount * 100);
 
-    openRazorpay(options);
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID || '',
+        amount: amountInPaise,
+        currency: 'INR',
+        name: 'BeAware',
+        description: 'Payment for your order',
+        image: '/images/logo.jpeg',
+        // No order_id for client-side flow
+        prefill: {
+          name: shippingAddress.full_name,
+          email: user?.email,
+        },
+        modal: {
+          ondismiss: () => setLoading(false)
+        },
+        theme: {
+          color: '#18181b', // Zinc-900
+        },
+        handler: async (response: any) => {
+          try {
+            setLoading(true);
+            toast.loading('Processing order...', { id: 'processing-order' });
+
+            // Create order in database after successful payment
+            await ordersAPI.create({
+              items: cart.items,
+              total_amount: totalAmount,
+              currency: 'INR',
+              status: 'PAID',
+              shipping_address: shippingAddress,
+              payment_intent_id: response.razorpay_payment_id
+            });
+
+            toast.dismiss('processing-order');
+            toast.success('Payment successful! Order placed.');
+            clearCart();
+            navigate('/orders');
+          } catch (err: any) {
+            console.error('Order creation failed:', err);
+            toast.dismiss('processing-order');
+            toast.error(err?.message || 'Failed to create order despite payment success. Please contact support.');
+          } finally {
+            setLoading(false);
+          }
+        }
+      };
+
+      openRazorpay(options);
+    } catch (err: any) {
+      console.error('Payment init failed:', err);
+      toast.error(err?.message || 'Failed to start payment');
+      setLoading(false);
+    }
   };
 
   const subtotal = cart?.total_price || 0;
@@ -137,9 +168,21 @@ function CheckoutPage() {
               {/* Step 1 */}
               {step === 1 && (
                 <div className="space-y-8">
-                  <h2 className="text-xl font-semibold">
-                    Shipping Address
-                  </h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Shipping Address</h2>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsMapOpen(true)}
+                      type="button"
+                      className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-blue-700"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                      </svg>
+                      Select on Map
+                    </motion.button>
+                  </div>
 
                   <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                     {[
@@ -162,9 +205,8 @@ function CheckoutPage() {
                             onChange={handleAddressChange}
                             className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
                           >
-                            <option>USA</option>
-                            <option>Canada</option>
-                            <option>UK</option>
+                            <option>India</option>
+
                           </select>
                         </div>
                       ) : (
@@ -176,7 +218,8 @@ function CheckoutPage() {
                             name={f.name}
                             value={(shippingAddress as any)[f.name]}
                             onChange={handleAddressChange}
-                            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+                            readOnly={addressFromMap && f.name !== 'full_name'}
+                            className={`w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none ${addressFromMap && f.name !== 'full_name' ? 'bg-zinc-50' : ''}`}
                           />
                         </div>
                       )
@@ -220,7 +263,7 @@ function CheckoutPage() {
                         <span className="flex-1">
                           {i.title} ({i.variant_sku}) × {i.quantity}
                         </span>
-                        <span>${(i.price * i.quantity).toFixed(2)}</span>
+                        <span>{`₹${(i.price * i.quantity).toFixed(2)}`}</span>
                       </div>
                     ))}
                   </div>
@@ -256,23 +299,42 @@ function CheckoutPage() {
             <div className="space-y-3 border-b pb-6 text-sm text-zinc-600">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>{`₹${subtotal.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>{`₹${tax.toFixed(2)}`}</span>
               </div>
             </div>
 
             <div className="mt-6 flex items-center justify-between">
               <span className="text-sm font-medium">Total</span>
               <span className="text-2xl font-semibold">
-                ${total.toFixed(2)}
+                {`₹${total.toFixed(2)}`}
               </span>
             </div>
           </motion.div>
         </div>
       </div>
+
+      {/* Map Picker Modal */}
+      <MapPicker
+        isOpen={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+        onLocationSelect={(addressData) => {
+          setShippingAddress((prev) => ({
+            ...prev,
+            address_line_1: addressData.address_line_1,
+            city: addressData.city,
+            state: addressData.state,
+            zip_code: addressData.zip_code,
+            country: addressData.country,
+            latitude: addressData.latitude,
+            longitude: addressData.longitude,
+          }));
+          setAddressFromMap(true);
+        }}
+      />
     </div>
   );
 }

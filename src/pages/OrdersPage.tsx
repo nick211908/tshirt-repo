@@ -167,7 +167,7 @@ function OrderCard({ order, index }: OrderCardProps) {
 
           <div className="text-right">
             <p className="text-sm font-medium">
-              ${Number(order.total_amount).toFixed(2)}
+              ₹{Number(order.total_amount).toFixed(2)}
             </p>
             <p className="text-xs text-zinc-500">
               {order.order_items.length} items
@@ -231,7 +231,7 @@ function OrderCard({ order, index }: OrderCardProps) {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      ${(item.unit_price * item.quantity).toFixed(2)}
+                      ₹{(item.unit_price * item.quantity).toFixed(2)}
                     </p>
                     <p className="text-xs text-zinc-500">
                       × {item.quantity}
@@ -267,7 +267,7 @@ function OrderCard({ order, index }: OrderCardProps) {
           <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-white p-4">
             <span className="font-medium">Total</span>
             <span className="text-xl font-semibold">
-              ${Number(order.total_amount).toFixed(2)}
+              ₹{Number(order.total_amount).toFixed(2)}
             </span>
           </div>
         </div>

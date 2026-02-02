@@ -161,7 +161,7 @@ function AdminPage() {
                                 {products.map((product) => (
                                     <tr key={product.id} className="hover:bg-gray-50 transition">
                                         <td className="px-6 py-4 font-medium text-gray-900">{product.title}</td>
-                                        <td className="px-6 py-4 text-gray-900">${Number(product.base_price).toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-gray-900">₹{Number(product.base_price).toFixed(2)}</td>
                                         <td className="px-6 py-4">
                                             <span
                                                 className={`px-2 py-1 rounded-full text-xs font-bold ${product.is_published
